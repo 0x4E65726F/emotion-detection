@@ -114,4 +114,4 @@ def accuracy(myDevice, myCNN, loader):
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
-            return (correct / total)
+    return (correct / total)
