@@ -51,7 +51,7 @@ class Net(nn.Module):
 
         for i in range(len(self.fc) - 1):
             x = F.relu(self.fc[i](x))
-        x = self.fc[len(self.fc) - 1](x)
+        x = F.softmax(self.fc[len(self.fc) - 1](x))
         return x
 
 def read_pic(data, categories):
