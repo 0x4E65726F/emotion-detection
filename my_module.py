@@ -18,7 +18,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 class Net(nn.Module):
-    def __init__(self, img_channel, img_width, img_height, img_label, conv_channels, fc_channels, kernel_size = 5, padding = 0, stride = 1):
+    def __init__(self, img_channel, img_width, img_height, img_label, conv_channels, fc_channels, kernel_size = 5, padding = 0, stride = 1, dropout = False):
         super().__init__()
         
         self.pool = nn.MaxPool2d(2, 2)
@@ -29,19 +29,20 @@ class Net(nn.Module):
         cur_width = img_width
         cur_height = img_height
         for conv_channel in conv_channels:
-            print(cur_channel, cur_width, cur_height)
             cur_width = ((cur_width - kernel_size + 2 * padding) // stride + 1) // 2
             cur_height = ((cur_height - kernel_size + 2 * padding) // stride + 1) // 2
             self.conv.append(nn.Conv2d(cur_channel, conv_channel, kernel_size, stride = stride, padding = padding))
             cur_channel = conv_channel
             
-
-        print(cur_channel, cur_width, cur_height)
         cur_channel = cur_channel * cur_width * cur_height
         for fc_channel in fc_channels:
             self.fc.append(nn.Linear(cur_channel, fc_channel))
             cur_channel = fc_channel
         self.fc.append(nn.Linear(cur_channel, img_label))
+        
+        self.hasDropout = dropout
+        if self.hasDropout:
+            self.dropout = nn.Dropout(0.25)
 
     def forward(self,x):
         for conv in self.conv:
@@ -50,8 +51,11 @@ class Net(nn.Module):
         x = torch.flatten(x, 1) # flatten all dimensions except batch
 
         for i in range(len(self.fc) - 1):
-            x = F.relu(self.fc[i](x))
-        x = F.softmax(self.fc[len(self.fc) - 1](x))
+            if self.hasDropout:
+                x = self.dropout(F.relu(self.fc[i](x)))
+            else:
+                x = F.relu(self.fc[i](x))
+        x = F.softmax(self.fc[len(self.fc) - 1](x), dim=1)
         return x
 
 def read_pic(data, categories):
