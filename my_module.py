@@ -73,6 +73,20 @@ def read_pic(data, categories):
     X = torch.stack(X).unsqueeze(1) # convert to pytorch tensor (batch, channels, w, h)
     return X, y
 
+def optimizer_to(optim, device):
+    for param in optim.state.values():
+        # Not sure there are any global tensors in the state dict
+        if isinstance(param, torch.Tensor):
+            param.data = param.data.to(device)
+            if param._grad is not None:
+                param._grad.data = param._grad.data.to(device)
+        elif isinstance(param, dict):
+            for subparam in param.values():
+                if isinstance(subparam, torch.Tensor):
+                    subparam.data = subparam.data.to(device)
+                    if subparam._grad is not None:
+                        subparam._grad.data = subparam._grad.data.to(device)
+
 def get_loader(Xtr, Xva, ytr, yva, batch_size = 4):
     train_dataset = torch.utils.data.TensorDataset(Xtr, ytr)
     test_dataset = torch.utils.data.TensorDataset(Xva, yva)
@@ -81,13 +95,14 @@ def get_loader(Xtr, Xva, ytr, yva, batch_size = 4):
     return trainloader, testloader
 
 def train_process(myDevice, myCNN, loader, EPOCH = 2):
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss().cuda() if torch.cuda.is_available() else nn.CrossEntropyLoss()
+    print(criterion)
     optimizer = optim.SGD(myCNN.parameters(), lr=0.001, momentum=0.9)
+    optimizer_to(optimizer, myDevice)
     for epoch in range(EPOCH):  # loop over the dataset multiple times
         running_loss = 0.0
         for i, data in enumerate(loader, 0):
             inputs, labels = data[0].to(myDevice), data[1].to(myDevice)
-
             optimizer.zero_grad()
             outputs = myCNN(inputs)
             loss = criterion(outputs, labels)
