@@ -162,7 +162,7 @@ def train_process(myDevice, myCNN, loader, LR = 0.001, EPOCH = 2, PRINT = 100):
 def train_process2(myDevice, myCNN, loader, LR = 0.001, EPOCH = 2, PRINT = 100):
     criterion = nn.CrossEntropyLoss().cuda() if torch.cuda.is_available() else nn.CrossEntropyLoss()
     print(criterion)
-    optimizer = optim.Adam(myCNN.parameters(), lr=LR)
+    optimizer = optim.AdamW(myCNN.parameters(), lr=LR)
     optimizer_to(optimizer, myDevice)
     for epoch in range(EPOCH):  # loop over the dataset multiple times
         running_loss = 0.0
